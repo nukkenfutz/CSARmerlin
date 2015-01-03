@@ -16,24 +16,6 @@ if (side player == west) then {
 	player addItem "AGM_CableTie";
 	player addItem "AGM_CableTie";
 
-	/*{
-		_x addAction [
-			"Take Captive",
-			{
-				(_this select 0) setCaptive true;
-				(_this select 0) forceWalk true;
-				systemChat format["You have taken %1 captive.", (name (_this select 0))];
-				removeallactions (_this select 0);
-			},
-			nil,
-			0,
-			false,
-			true,
-			"",
-			"(_target distance _this) < 2"
-		]; // "GroundWeaponHolder" createVehicle getpos(_this select 0)
-
-	} foreach [fug1,fug2,fug3];*/
 };
 
 if (side player == east) then {
@@ -72,7 +54,7 @@ if (true) then {
 				_startPos = [_crashpos, 50, 75, 1, 0, 1, 0, [], [[1,1,1],[1,1,1]]] call BIS_fnc_findSafePos;
 			
 				if ((_startPos select 0) != 1) then {
-					_safe=true;
+					_safe = true;
 					_x setpos _startPos;
 					_x setDir random 360;
 				};
@@ -80,13 +62,13 @@ if (true) then {
 		} foreach [fug1, fug2, fug3];
 
 		
-		waituntil {
+		waituntil{
 			(
 				({(side _x == civilian)&&(_x in [fug1,fug2,fug3])}count list goalB)
 				+ 
 				({(side _x == independent)&&(_x in [fug1,fug2,fug3])}count list goalO)
 				== {alive _x}count [fug1,fug2,fug3]
-			) || (
+			) or (
 				{alive _x}count [fug1,fug2,fug3] == 0
 			);
 			
@@ -95,13 +77,18 @@ if (true) then {
 		
 		if ({alive _x}count [fug1,fug2,fug3] == 0) then {
 		
-			[["End1"], "BIS_fnc_endMission", true, false, false] call BIS_fnc_MP;
+			["All fugitives are dead!", "systemChat", true, false, true ] call BIS_fnc_MP;
+			sleep 3;
+			["End1", "BIS_fnc_endMission", true, false, false] call BIS_fnc_MP;
 			
 		} else {
 		
+			_bscore = ({(side _x == civilian)&&(_x in [fug1,fug2,fug3])}count list goalB);
+			_oscore = ({(side _x == independent)&&(_x in [fug1,fug2,fug3])}count list goalO);
+		
 			[ "All living fugitives are secured!", "systemChat", true, false, true ] call BIS_fnc_MP;
 			sleep 1;
-			[ 
+			[
 				(format [
 					"BLUFOR captured %1, OPFOR rescued %2.", 
 					({(side _x == civilian)&&(_x in [fug1,fug2,fug3])}count list goalB),
@@ -110,10 +97,15 @@ if (true) then {
 			"systemChat", true, false, true ] call BIS_fnc_MP;
 			sleep 3;
 			
-			//ending conditions here
+			if (_bscore > _oscore) then {
+				["End2","BIS_fnc_endMission", true, false, true ] call BIS_fnc_MP;
+			};	
+			if (_bscore < _oscore) then {
+				["End3","BIS_fnc_endMission", true, false, true ] call BIS_fnc_MP;
+			} else {
+				["End4","BIS_fnc_endMission", true, false, true ] call BIS_fnc_MP;
+			};
 		};
-		
-		
 	};
 
 	[] spawn {

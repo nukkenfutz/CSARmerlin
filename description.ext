@@ -1,0 +1,49 @@
+overviewText = "Asymmetrical adversarial hostage rescue/capture.";
+author="jorsh";
+OnLoadName="SNOWEDIN";
+OnLoadMission="get lost";
+
+saving = 0;
+disabledAI=1
+enableDebugConsole = 1;
+respawn = "GROUP";
+
+class CfgDebriefing
+{  
+	class END1
+	{
+		title = "failure";
+		subtitle = "how could this happen!?";
+		description = "";
+		pictureBackground = "";
+		picture = "";
+		pictureColor[] = {1,1,1,1};
+	};
+	class END2
+	{
+		title = "BLUFOR WINS";
+		subtitle = "'murica";
+		description = "";
+		pictureBackground = "";
+		picture = "";
+		pictureColor[] = {0.6,0.1,0.2,1};
+	};
+	class END3
+	{
+		title = "OPFOR WINS";
+		subtitle = "ah, motherland!";
+		description = "";
+		pictureBackground = "";
+		picture = "";
+		pictureColor[] = {0.6,0.1,0.2,1};
+	};
+	class END4
+	{
+		title = "draw";
+		subtitle = "oops";
+		description = "gotta break a few eggs";
+		pictureBackground = "";
+		picture = "";
+		pictureColor[] = {0.6,0.1,0.2,1};
+	};
+};

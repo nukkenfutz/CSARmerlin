@@ -1,36 +1,54 @@
+execVM "briefing.sqf";
 enableSaving [false, false];
 enableSentences false;
 sleep 1;
 gameonscript = [startB, startO, leadB, leadO, [ofheli, bftruck1, bftruck2]] execVM "gameon.sqf";
+junk setDamage 1;
 
 
 if (side player == west) then {
-	Alpha addGroupIcon ["b_inf",[0,0]];
-	Alpha setGroupIconParams [[0,.25,1,1],"A",1,true];
-	Bravo addGroupIcon ["b_inf",[0,0]];
-	Bravo setGroupIconParams [[0,.25,1,1],"B",1,true];
-	Lead addGroupIcon ["b_inf",[0,0]];
-	Lead setGroupIconParams [[0,.25,1,1],"SL",1,true];
+	if (!(isnil "Alpha")) then {
+		Alpha addGroupIcon ["b_inf",[0,0]];
+		Alpha setGroupIconParams [[0,.25,1,1],"A",1,true];
+	};
+	if (!(isnil "Bravo")) then {
+		Bravo addGroupIcon ["b_inf",[0,0]];
+		Bravo setGroupIconParams [[0,.25,1,1],"B",1,true];
+	};
+	if (!(isnil "Lead")) then {
+		Lead addGroupIcon ["b_inf",[0,0]];
+		Lead setGroupIconParams [[0,.25,1,1],"SL",1,true];
+	};
 	setGroupIconsVisible [true,false];
+	deleteMarkerLocal "ofgoalmarker";
 	
 	player addItem "AGM_CableTie";
 	player addItem "AGM_CableTie";
+	player unassignItem "rhsusf_ANPVS_14";
+	player removeitem "rhsusf_ANPVS_14";
 
 };
 
 if (side player == east) then {
-	Pilot addGroupIcon ["b_air",[0,0]];
-	Pilot setGroupIconParams [[0,.25,1,1],"Rook",1,true];
-	Ground addGroupIcon ["b_recon",[0,0]];
-	Ground setGroupIconParams [[0,.25,1,1],"Knight",1,true];
+	if (!(isnil "Pilot")) then {
+		Pilot addGroupIcon ["b_air",[0,0]];
+		Pilot setGroupIconParams [[0,.25,1,1],"Rook",1,true];
+	};
+	if (!(isnil "Ground")) then {
+		Ground addGroupIcon ["b_recon",[0,0]];
+		Ground setGroupIconParams [[0,.25,1,1],"Knight",1,true];
+	};
 	setGroupIconsVisible [true,false];
+	deleteMarkerLocal "bfgoalmarker";
+	"bf1" setMarkerColorLocal "ColorRed";
+	"bf2" setMarkerColorLocal "ColorRed";
 };
 
 if (side player == independent) then {
 
 };
 
-if (true) then {
+if (isserver) then {
 
 	waituntil{scriptDone gameonscript};
 	{_x setMarkerAlpha .2} foreach ["marker_fug1", "marker_fug2", "marker_fug3"];
@@ -51,7 +69,7 @@ if (true) then {
 		{
 			_safe = false;
 			while {!_safe} do {
-				_startPos = [_crashpos, 50, 75, 1, 0, 1, 0, [], [[1,1,1],[1,1,1]]] call BIS_fnc_findSafePos;
+				_startPos = [_crashpos, 50, 60, 1, 0, 1, 0, [], [[1,1,1],[1,1,1]]] call BIS_fnc_findSafePos;
 			
 				if ((_startPos select 0) != 1) then {
 					_safe = true;
@@ -62,7 +80,8 @@ if (true) then {
 		} foreach [fug1, fug2, fug3];
 
 		
-		waituntil{
+		while
+		{!(
 			(
 				({(side _x == civilian)&&(_x in [fug1,fug2,fug3])}count list goalB)
 				+ 
@@ -70,8 +89,8 @@ if (true) then {
 				== {alive _x}count [fug1,fug2,fug3]
 			) or (
 				{alive _x}count [fug1,fug2,fug3] == 0
-			);
-			
+			)
+		)} do {
 			sleep 5;
 		};
 		
@@ -79,7 +98,7 @@ if (true) then {
 		
 			["All fugitives are dead!", "systemChat", true, false, true ] call BIS_fnc_MP;
 			sleep 3;
-			["End1", "BIS_fnc_endMission", true, false, false] call BIS_fnc_MP;
+			[["End1", false], "BIS_fnc_endMission", true, false, false] call BIS_fnc_MP;
 			
 		} else {
 		
@@ -98,11 +117,12 @@ if (true) then {
 			sleep 3;
 			
 			if (_bscore > _oscore) then {
-				["End2","BIS_fnc_endMission", true, false, true ] call BIS_fnc_MP;
+				[["End2",(side player == west)],"BIS_fnc_endMission", true, false, true ] call BIS_fnc_MP;
 			};	
 			if (_bscore < _oscore) then {
-				["End3","BIS_fnc_endMission", true, false, true ] call BIS_fnc_MP;
-			} else {
+				[["End3", (side player == east)],"BIS_fnc_endMission", true, false, true ] call BIS_fnc_MP;
+			};
+			if (_bscore == _oscore) then {
 				["End4","BIS_fnc_endMission", true, false, true ] call BIS_fnc_MP;
 			};
 		};
@@ -174,3 +194,33 @@ if (true) then {
 		};
 	};
 };
+
+/* 
+// refueling trigger condition
+
+(ofheli in (list helipad))&&((getpos ofheli) select 2 < 1)&&((fuel ofheli) < 0.6);
+
+// on act.
+
+refuelaction = (driver ofheli) addaction [
+	"Refuel, 20 minutes flight",
+	{
+		[ 40 ,[{
+			[[[], {ofheli setfuel 0.16;}], "BIS_fnc_spawn", ofheli] call BIS_fnc_MP;
+		}],"BIS_fnc_spawn","   Refueling..."]call AGM_Core_fnc_progressBar;
+
+		(driver ofheli) removeaction refuelaction;
+
+	}, (driver ofheli),0,true,true
+];
+
+// on dea.
+
+(driver ofheli) removeAction refuelaction;
+
+
+//
+
+unburdened littlebird takes .008 fuel a minute, 20 minutes of fuel is only .16
+
+[] spawn {while {true} do {sleep 10; systemchat format["fuel: %1", (fuel ofheli)]};}
